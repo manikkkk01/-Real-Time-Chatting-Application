@@ -1,0 +1,28 @@
+from flask import Flask, render_template, request
+from flask_socketio import SocketIO, send
+from log_chat import log_message
+import datetime
+
+app = Flask(__name__)
+socketio = SocketIO(app)
+users = set()
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/analytics')
+def analytics():
+    return render_template('analytics.html')
+
+@socketio.on('message')
+def handleMessage(data):
+    username = data.get('user', 'Anonymous')
+    text = data.get('message')
+    timestamp = datetime.datetime.now()
+
+    log_message(username, text, timestamp)  # Save to DB
+    send({'user': username, 'message': text, 'time': timestamp.strftime('%H:%M')}, broadcast=True)
+
+if __name__ == '__main__':
+    socketio.run(app, debug=True)

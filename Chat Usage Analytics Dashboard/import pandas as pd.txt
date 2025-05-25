@@ -1,0 +1,50 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+import sqlite3
+
+def load_data():
+    conn = sqlite3.connect('chat.db')
+    df = pd.read_sql_query("SELECT * FROM messages", conn, parse_dates=['timestamp'])
+    df['timestamp'] = pd.to_datetime(df['timestamp'])
+    return df
+
+def most_active_users(df):
+    return df['user'].value_counts().head(10)
+
+def peak_hours_heatmap(df):
+    df['hour'] = df['timestamp'].dt.hour
+    df['day'] = df['timestamp'].dt.day_name()
+    pivot = df.pivot_table(index='day', columns='hour', values='message', aggfunc='count').fillna(0)
+    
+    plt.figure(figsize=(12, 6))
+    sns.heatmap(pivot, cmap="YlGnBu", annot=True, fmt=".0f")
+    plt.title("Peak Chat Hours (Day vs. Hour)")
+    plt.ylabel("Day of Week")
+    plt.xlabel("Hour of Day")
+    plt.tight_layout()
+    plt.savefig('static/peak_hours.png')
+
+def message_volume_trend(df):
+    df['date'] = df['timestamp'].dt.date
+    daily = df.groupby('date').size()
+
+    plt.figure(figsize=(10, 4))
+    daily.plot(kind='line')
+    plt.title("Daily Message Volume")
+    plt.xlabel("Date")
+    plt.ylabel("Messages")
+    plt.grid(True)
+    plt.tight_layout()
+    plt.savefig('static/volume_trend.png')
+
+def analyze():
+    df = load_data()
+    print("Most Active Users:")
+    print(most_active_users(df))
+
+    peak_hours_heatmap(df)
+    message_volume_trend(df)
+
+if __name__ == '__main__':
+    analyze()
