@@ -1,0 +1,9 @@
+CREATE TABLE chatbot_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id TEXT,
+    is_bot BOOLEAN,
+    message TEXT,
+    timestamp DATETIME,
+    is_resolved BOOLEAN,  -- TRUE if the chatbot handled it alone
+    feedback_score INTEGER  -- 1-5 rating from the user
+);

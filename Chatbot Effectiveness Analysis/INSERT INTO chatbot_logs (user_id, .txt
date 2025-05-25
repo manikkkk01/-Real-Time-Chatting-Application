@@ -1,0 +1,2 @@
+INSERT INTO chatbot_logs (user_id, is_bot, message, timestamp, is_resolved, feedback_score)
+VALUES ('u123', TRUE, 'Hello, how can I help you?', '2025-05-25 10:15:00', TRUE, 4);

@@ -1,0 +1,4 @@
+<div class="mt-4">
+  <h4>🤖 Chatbot Feedback Analysis</h4>
+  <img src="/static/chatbot_feedback.png" alt="Chatbot Feedback Distribution" width="100%">
+</div>

@@ -1,0 +1,52 @@
+import sqlite3
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+def load_data():
+    conn = sqlite3.connect("chat.db")
+    df = pd.read_sql_query("SELECT * FROM chatbot_logs", conn)
+    conn.close()
+    return df
+
+def chatbot_metrics(df):
+    total_chats = len(df[df['is_bot'] == True])
+    resolved = len(df[(df['is_bot'] == True) & (df['is_resolved'] == True)])
+    escalated = total_chats - resolved
+
+    avg_response_len = df[df['is_bot'] == True]['message'].apply(len).mean()
+
+    df['timestamp'] = pd.to_datetime(df['timestamp'])
+    df.sort_values(by='timestamp', inplace=True)
+    df['response_time'] = df['timestamp'].diff().dt.total_seconds()
+
+    bot_times = df[(df['is_bot'] == True)]['response_time']
+    avg_bot_response_time = bot_times.mean()
+
+    avg_feedback = df['feedback_score'].dropna().mean()
+
+    print("\n📊 Chatbot Effectiveness Metrics:")
+    print(f"🔢 Total Chatbot Interactions: {total_chats}")
+    print(f"✅ Resolved by Bot: {resolved}")
+    print(f"🚨 Escalated to Human: {escalated}")
+    print(f"💬 Avg Bot Message Length: {avg_response_len:.2f} characters")
+    print(f"⏱️ Avg Bot Response Time: {avg_bot_response_time:.2f} sec")
+    print(f"⭐ Avg Feedback Score: {avg_feedback:.2f} / 5")
+
+def plot_feedback(df):
+    plt.figure(figsize=(6, 4))
+    sns.histplot(df['feedback_score'].dropna(), bins=5, kde=True, color='blue')
+    plt.title("⭐ User Feedback Distribution")
+    plt.xlabel("Feedback Score")
+    plt.ylabel("Count")
+    plt.tight_layout()
+    plt.savefig("static/chatbot_feedback.png")
+    plt.close()
+
+def chatbot_analysis_pipeline():
+    df = load_data()
+    chatbot_metrics(df)
+    plot_feedback(df)
+
+if __name__ == '__main__':
+    chatbot_analysis_pipeline()
