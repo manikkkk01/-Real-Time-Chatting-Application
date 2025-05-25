@@ -1,0 +1,72 @@
+import sqlite3
+import pandas as pd
+import networkx as nx
+import matplotlib.pyplot as plt
+from networkx.algorithms import community
+
+def load_message_data():
+    conn = sqlite3.connect("chat.db")
+    df = pd.read_sql_query("SELECT * FROM messages", conn)
+    conn.close()
+    return df
+
+# Build interaction graph
+def build_user_graph(df):
+    G = nx.Graph()
+    
+    # Count interactions: user A sent message in response to user B
+    user_pairs = df.groupby(['user_id', 'receiver_id']).size().reset_index(name='weight')
+
+    for _, row in user_pairs.iterrows():
+        G.add_edge(row['user_id'], row['receiver_id'], weight=row['weight'])
+
+    return G
+
+# Visualize user-user graph
+def visualize_graph(G, title, file_path):
+    plt.figure(figsize=(10, 8))
+    pos = nx.spring_layout(G, k=0.5)
+    weights = nx.get_edge_attributes(G, 'weight')
+
+    nx.draw(G, pos, with_labels=True, node_color='skyblue', edge_color='gray', node_size=1500, font_size=10)
+    nx.draw_networkx_edge_labels(G, pos, edge_labels=weights)
+    plt.title(title)
+    plt.tight_layout()
+    plt.savefig(file_path)
+    plt.close()
+
+# Community detection
+def detect_communities(G):
+    communities = list(community.greedy_modularity_communities(G))
+    return communities
+
+# Centrality Analysis
+def central_users(G):
+    centrality = nx.degree_centrality(G)
+    return sorted(centrality.items(), key=lambda x: x[1], reverse=True)
+
+# Main pipeline
+def full_network_analysis():
+    df = load_message_data()
+
+    if 'receiver_id' not in df.columns:
+        print("Error: 'receiver_id' column is missing.")
+        return
+
+    G = build_user_graph(df)
+    visualize_graph(G, "User Interaction Graph", "static/user_graph.png")
+
+    communities = detect_communities(G)
+    print(f"\nDetected Communities (Cliques):")
+    for i, com in enumerate(communities):
+        print(f"Community {i + 1}: {list(com)}")
+
+    central = central_users(G)
+    print(f"\nTop Central Users:")
+    for user, score in central[:5]:
+        print(f"{user}: Centrality = {score:.3f}")
+
+    return G, communities, central
+
+if __name__ == '__main__':
+    full_network_analysis()

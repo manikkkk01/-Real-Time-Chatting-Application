@@ -1,0 +1,7 @@
+CREATE TABLE messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id TEXT,
+    receiver_id TEXT,
+    message TEXT,
+    timestamp DATETIME
+);

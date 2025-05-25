@@ -1,0 +1,4 @@
+<div class="mt-5">
+  <h4>📡 User Interaction Network</h4>
+  <img src="/static/user_graph.png" width="100%">
+</div>
