@@ -1,0 +1,19 @@
+const socket = io();
+
+const messageInput = document.getElementById('message');
+const messagesDiv = document.getElementById('messages');
+
+function sendMessage() {
+    const msg = messageInput.value;
+    if (msg.trim()) {
+        socket.send(msg);
+        messageInput.value = '';
+    }
+}
+
+socket.on('message', function(msg) {
+    const p = document.createElement('p');
+    p.textContent = msg;
+    messagesDiv.appendChild(p);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+});
