@@ -1,0 +1,99 @@
+import sqlite3
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from datetime import datetime
+import numpy as np
+
+def load_data():
+    conn = sqlite3.connect('chat.db')
+    df = pd.read_sql_query("SELECT * FROM messages", conn)
+    df['timestamp'] = pd.to_datetime(df['timestamp'])
+    return df
+
+# ---------- 1. SPIKE DETECTION IN MESSAGE FREQUENCY -------- #
+def detect_spikes(df):
+    df['date'] = df['timestamp'].dt.date
+    daily_counts = df.groupby('date').size()
+
+    # Rolling Z-score method
+    rolling_mean = daily_counts.rolling(3).mean()
+    rolling_std = daily_counts.rolling(3).std()
+    z_scores = (daily_counts - rolling_mean) / rolling_std
+
+    spikes = z_scores[z_scores > 2]  # Anomaly threshold
+
+    plt.figure(figsize=(10, 4))
+    plt.plot(daily_counts.index, daily_counts.values, label='Message Count')
+    plt.scatter(spikes.index, daily_counts.loc[spikes.index], color='red', label='Spike')
+    plt.title('Spike Detection in Daily Message Volume')
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig('static/spike_detection.png')
+
+
+# ---------- 2. LOGIN PATTERN ANOMALY DETECTION -------- #
+def login_anomaly_detection():
+    conn = sqlite3.connect('chat.db')
+    df = pd.read_sql_query("SELECT * FROM login_logs", conn)
+    df['timestamp'] = pd.to_datetime(df['timestamp'])
+
+    df['hour'] = df['timestamp'].dt.hour
+    sns.histplot(df['hour'], bins=24, kde=True)
+    plt.title("Login Pattern Distribution")
+    plt.xlabel("Hour of Day")
+    plt.ylabel("Login Count")
+    plt.tight_layout()
+    plt.savefig("static/login_pattern.png")
+
+
+# ---------- 3. BOT-LIKE BEHAVIOR DETECTION -------- #
+def detect_bots(df):
+    df = df.sort_values(by=['user_id', 'timestamp'])
+    df['prev_time'] = df.groupby('user_id')['timestamp'].shift()
+    df['time_diff'] = (df['timestamp'] - df['prev_time']).dt.total_seconds()
+
+    # Threshold: if avg time between messages < 2 seconds, consider suspicious
+    suspicious = df.groupby('user_id')['time_diff'].mean().dropna()
+    bot_users = suspicious[suspicious < 2].index.tolist()
+
+    print("⚠️ Suspicious bot-like users:", bot_users)
+
+    sns.histplot(suspicious, bins=50)
+    plt.axvline(2, color='red', linestyle='--', label='Bot threshold')
+    plt.title("Avg Time Between Messages per User")
+    plt.xlabel("Seconds")
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig('static/bot_behavior.png')
+
+
+# ---------- 4. MESSAGE DELETION ANALYSIS -------- #
+def message_deletion_analysis():
+    conn = sqlite3.connect('chat.db')
+    df = pd.read_sql_query("SELECT * FROM deleted_messages", conn)
+    df['timestamp'] = pd.to_datetime(df['timestamp'])
+
+    df['hour'] = df['timestamp'].dt.hour
+    df['date'] = df['timestamp'].dt.date
+
+    daily_deletes = df.groupby('date').size()
+
+    plt.figure(figsize=(8, 4))
+    daily_deletes.plot(kind='bar')
+    plt.title("Messages Deleted per Day")
+    plt.ylabel("Delete Count")
+    plt.tight_layout()
+    plt.savefig("static/message_deletion.png")
+
+
+# ---------- MAIN -------- #
+def full_security_analysis():
+    df = load_data()
+    detect_spikes(df)
+    login_anomaly_detection()
+    detect_bots(df)
+    message_deletion_analysis()
+
+if __name__ == '__main__':
+    full_security_analysis()

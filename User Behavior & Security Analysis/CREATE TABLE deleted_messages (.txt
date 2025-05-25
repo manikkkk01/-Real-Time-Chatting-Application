@@ -1,0 +1,6 @@
+CREATE TABLE deleted_messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id TEXT,
+    original_message TEXT,
+    timestamp DATETIME
+);

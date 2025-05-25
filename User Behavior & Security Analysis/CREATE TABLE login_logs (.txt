@@ -1,0 +1,5 @@
+CREATE TABLE login_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id TEXT,
+    timestamp DATETIME
+);

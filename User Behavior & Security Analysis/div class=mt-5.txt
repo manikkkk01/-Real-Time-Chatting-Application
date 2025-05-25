@@ -1,0 +1,19 @@
+<div class="mt-5">
+  <h4>🔺 Spike Detection in Message Volume</h4>
+  <img src="/static/spike_detection.png" width="100%">
+</div>
+
+<div class="mt-5">
+  <h4>🕵️ Login Pattern Distribution</h4>
+  <img src="/static/login_pattern.png" width="100%">
+</div>
+
+<div class="mt-5">
+  <h4>🤖 Bot Detection (Avg Time Between Messages)</h4>
+  <img src="/static/bot_behavior.png" width="100%">
+</div>
+
+<div class="mt-5">
+  <h4>🗑️ Message Deletion Trend</h4>
+  <img src="/static/message_deletion.png" width="100%">
+</div>
