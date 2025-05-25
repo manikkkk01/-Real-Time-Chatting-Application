@@ -1,0 +1,99 @@
+import sqlite3
+import pandas as pd
+import matplotlib.pyplot as plt
+from wordcloud import WordCloud
+from textblob import TextBlob
+import nltk
+from gensim import corpora, models
+import seaborn as sns
+
+nltk.download('punkt')
+nltk.download('stopwords')
+
+from nltk.corpus import stopwords
+
+def load_data():
+    conn = sqlite3.connect('chat.db')
+    df = pd.read_sql_query("SELECT * FROM messages", conn)
+    df['timestamp'] = pd.to_datetime(df['timestamp'])
+    return df
+
+# ---------- 1. SENTIMENT ANALYSIS ---------------- #
+def analyze_sentiment(df):
+    def get_sentiment(text):
+        blob = TextBlob(text)
+        return blob.sentiment.polarity
+
+    df['sentiment'] = df['message'].astype(str).apply(get_sentiment)
+
+    def classify(score):
+        if score > 0.1:
+            return 'Positive'
+        elif score < -0.1:
+            return 'Negative'
+        else:
+            return 'Neutral'
+
+    df['sentiment_label'] = df['sentiment'].apply(classify)
+
+    sentiment_counts = df['sentiment_label'].value_counts()
+
+    plt.figure(figsize=(6, 6))
+    sentiment_counts.plot.pie(autopct='%1.1f%%', colors=['#8bc34a', '#ffc107', '#f44336'])
+    plt.title("Sentiment Distribution")
+    plt.ylabel('')
+    plt.tight_layout()
+    plt.savefig('static/sentiment_pie.png')
+    return df
+
+
+# ---------- 2. WORD CLOUD ---------------- #
+def generate_wordcloud(df):
+    text = ' '.join(df['message'].dropna().astype(str))
+    stop_words = set(stopwords.words('english'))
+
+    wordcloud = WordCloud(width=800, height=400, background_color='white',
+                          stopwords=stop_words).generate(text)
+
+    plt.figure(figsize=(10, 5))
+    plt.imshow(wordcloud, interpolation='bilinear')
+    plt.axis('off')
+    plt.tight_layout()
+    plt.savefig('static/wordcloud.png')
+
+
+# ---------- 3. TOPIC MODELING (LDA) ---------------- #
+def perform_topic_modeling(df, num_topics=3):
+    docs = df['message'].dropna().astype(str).tolist()
+    stop_words = set(stopwords.words('english'))
+
+    texts = [[word for word in doc.lower().split() if word.isalpha() and word not in stop_words] for doc in docs]
+
+    dictionary = corpora.Dictionary(texts)
+    corpus = [dictionary.doc2bow(text) for text in texts]
+
+    lda_model = models.LdaModel(corpus, num_topics=num_topics, id2word=dictionary, passes=10)
+
+    topics = lda_model.print_topics(num_words=5)
+
+    fig, ax = plt.subplots(figsize=(8, 4))
+    y_pos = range(len(topics))
+    topics_text = [topic[1] for topic in topics]
+    ax.barh(y_pos, [1]*len(topics), color='skyblue')
+    ax.set_yticks(y_pos)
+    ax.set_yticklabels(topics_text)
+    ax.invert_yaxis()
+    ax.set_title('LDA Topics (Top 5 Words Each)')
+    plt.tight_layout()
+    plt.savefig('static/topics.png')
+
+
+# ---------- MAIN -------------- #
+def full_text_analysis():
+    df = load_data()
+    df = analyze_sentiment(df)
+    generate_wordcloud(df)
+    perform_topic_modeling(df)
+
+if __name__ == '__main__':
+    full_text_analysis()

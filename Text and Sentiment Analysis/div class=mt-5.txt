@@ -1,0 +1,14 @@
+<div class="mt-5">
+    <h4>🧠 Sentiment Analysis</h4>
+    <img src="/static/sentiment_pie.png" width="50%">
+</div>
+
+<div class="mt-5">
+    <h4>☁️ Most Frequent Words</h4>
+    <img src="/static/wordcloud.png" width="100%">
+</div>
+
+<div class="mt-5">
+    <h4>📚 Common Discussion Topics</h4>
+    <img src="/static/topics.png" width="100%">
+</div>
